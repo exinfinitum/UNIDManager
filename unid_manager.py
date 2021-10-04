@@ -57,8 +57,6 @@ def load_unid_list(unid_list_file_path):
             unid_num = unid.split(' ')[1].strip('\n')
             unid_names.append(unid_name)
             unid_nums.append(unid_num)
-    print(unid_names)
-    print(unid_nums)
     return unid_names, unid_nums
 
 
@@ -69,7 +67,6 @@ curr_unid_names, curr_unid_nums = load_unid_list(f'./{UNID_LIST_FILE}')
 with open(UNID_LIST_FILE, 'w+') as out:
     last_current_num = int(curr_unid_nums[-1], 16) if len(curr_unid_nums) > 0 else FIRST_UNID_NUMBER
     for i in range(FIRST_UNID_NUMBER, max(last_current_num, FIRST_UNID_NUMBER)):
-        print(hex(i))
         if hex(i) not in curr_unid_nums:
             free_unid_numbers.append(hex(i))
     curr_unids = {}
@@ -77,7 +74,6 @@ with open(UNID_LIST_FILE, 'w+') as out:
         if curr_unid_names[i] in prefixed_unids:
             curr_unids[curr_unid_names[i]] = curr_unid_nums[i]
     curr_free_unid_num = 0
-    print(free_unid_numbers)
     for i in range(len(prefixed_unids)):
         unid = prefixed_unids[i]
         # If unid is already in our list, use that instead
