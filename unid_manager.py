@@ -1,7 +1,7 @@
 import os
 import re
 
-FIRST_UNID_NUMBER = int("defd0000", 16) # first UNID in your extension
+FIRST_UNID_NUMBER = int("defd0300", 16) # first UNID in your extension
 PREFIX = 'heligen_' # prefix for UNIDs added by your extension
 EXTENSION_CORE_FILE = 'HGN_IA_Core.xml' # core file that directly or indirectly references all files in your extension
 UNID_LIST_FILE = 'unid_list_file.txt' # file that contains the UNID list
@@ -53,8 +53,9 @@ def load_unid_list(unid_list_file_path):
             pass
     with open(unid_list_file_path, 'r+') as f:
         for unid in f.readlines():
-            unid_name = unid.split(' ')[0]
-            unid_num = unid.split(' ')[1].strip('\n')
+            unid_string = unid.strip('\n').strip('<!ENTITY ').strip('">').replace('"','')
+            unid_name = unid_string.split(' ')[0]
+            unid_num = unid_string.split(' ')[1]
             unid_names.append(unid_name)
             unid_nums.append(unid_num)
     return unid_names, unid_nums
@@ -79,7 +80,6 @@ with open(UNID_LIST_FILE, 'w+') as out:
         # If unid is already in our list, use that instead
         if unid in curr_unid_names:
             unid_num = curr_unid_nums[curr_unid_names.index(unid)]
-            out.write(unid + ' ' + unid_num)
             print(f'Existing UNID: {unid} {unid_num}')
         else:
             if curr_free_unid_num < len(free_unid_numbers):
@@ -90,6 +90,6 @@ with open(UNID_LIST_FILE, 'w+') as out:
             else:
                 unid_num = hex(last_current_num + (1 + (curr_free_unid_num - len(free_unid_numbers))))
                 curr_free_unid_num += 1
-            out.write(unid + ' ' + unid_num)
             print(f'New UNID: {unid} {unid_num}')
+        out.write('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">')
         out.write('\n')
