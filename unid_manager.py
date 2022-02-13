@@ -1,11 +1,15 @@
 import os
 import re
+import argparse
 
-FIRST_UNID_NUMBER = int("defd0300", 16) # first UNID in your extension
-PREFIX = 'heligen_' # prefix for UNIDs added by your extension
-EXTENSION_CORE_FILE = 'HGN_IA_Core.xml' # core file that directly or indirectly references all files in your extension
-UNID_LIST_FILE = 'unid_list_file.txt' # file that contains the UNID list
-
+def get_args():
+    parser = argparse.ArgumentParser(description='Create/update a list of UNIDs referenced by your extension.')
+    parser.add_argument('--first_unid_number', required='true', type=str, help='First UNID hex number in your extension.')
+    parser.add_argument('--extension_core_file', required='true', type=str, help='Core file that directly or indirectly references all files in your extension.')
+    parser.add_argument('--prefix', required='true', type=str, help='Prefix for UNIDs added by your extension.')
+    parser.add_argument('--unid_list_file', required='true', type=str, help='Filename of the UNID list to create/add to.')
+    args = parser.parse_args()
+    return args
 
 def find_all_unids_in_file(f_string):
     unids = []
@@ -60,36 +64,41 @@ def load_unid_list(unid_list_file_path):
             unid_nums.append(unid_num)
     return unid_names, unid_nums
 
+def main(first_unid_number, prefix, extension_core_file, unid_list_file):
+    prefixed_unids = [unid for unid in find_all_unids(f'./{extension_core_file}') if prefix in unid]
+    free_unid_numbers = []
+    curr_unid_names, curr_unid_nums = load_unid_list(f'./{unid_list_file}')
 
-prefixed_unids = [unid for unid in find_all_unids(f'./{EXTENSION_CORE_FILE}') if PREFIX in unid]
-free_unid_numbers = []
-curr_unid_names, curr_unid_nums = load_unid_list(f'./{UNID_LIST_FILE}')
-
-with open(UNID_LIST_FILE, 'w+') as out:
-    last_current_num = int(curr_unid_nums[-1], 16) if len(curr_unid_nums) > 0 else FIRST_UNID_NUMBER
-    for i in range(FIRST_UNID_NUMBER, max(last_current_num, FIRST_UNID_NUMBER)):
-        if hex(i) not in curr_unid_nums:
-            free_unid_numbers.append(hex(i))
-    curr_unids = {}
-    for i in range(len(curr_unid_names)):
-        if curr_unid_names[i] in prefixed_unids:
-            curr_unids[curr_unid_names[i]] = curr_unid_nums[i]
-    curr_free_unid_num = 0
-    for i in range(len(prefixed_unids)):
-        unid = prefixed_unids[i]
-        # If unid is already in our list, use that instead
-        if unid in curr_unid_names:
-            unid_num = curr_unid_nums[curr_unid_names.index(unid)]
-            print(f'Existing UNID: {unid} {unid_num}')
-        else:
-            if curr_free_unid_num < len(free_unid_numbers):
-                unid_num = free_unid_numbers[curr_free_unid_num]
-                curr_free_unid_num += 1
-            elif len(curr_unid_nums) == 0 and i == 0:
-                unid_num = hex(last_current_num)
+    with open(unid_list_file, 'w+') as out:
+        last_current_num = int(curr_unid_nums[-1], 16) if len(curr_unid_nums) > 0 else first_unid_number
+        for i in range(first_unid_number, max(last_current_num, first_unid_number)):
+            if hex(i) not in curr_unid_nums:
+                free_unid_numbers.append(hex(i))
+        curr_unids = {}
+        for i in range(len(curr_unid_names)):
+            if curr_unid_names[i] in prefixed_unids:
+                curr_unids[curr_unid_names[i]] = curr_unid_nums[i]
+        curr_free_unid_num = 0
+        for i in range(len(prefixed_unids)):
+            unid = prefixed_unids[i]
+            # If unid is already in our list, use that instead
+            if unid in curr_unid_names:
+                unid_num = curr_unid_nums[curr_unid_names.index(unid)]
+                print(f'Existing UNID: {unid} {unid_num}')
             else:
-                unid_num = hex(last_current_num + (1 + (curr_free_unid_num - len(free_unid_numbers))))
-                curr_free_unid_num += 1
-            print(f'New UNID: {unid} {unid_num}')
-        out.write('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">')
-        out.write('\n')
+                if curr_free_unid_num < len(free_unid_numbers):
+                    unid_num = free_unid_numbers[curr_free_unid_num]
+                    curr_free_unid_num += 1
+                elif len(curr_unid_nums) == 0 and i == 0:
+                    unid_num = hex(last_current_num)
+                else:
+                    unid_num = hex(last_current_num + (1 + (curr_free_unid_num - len(free_unid_numbers))))
+                    curr_free_unid_num += 1
+                print(f'New UNID: {unid} {unid_num}')
+            out.write('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">')
+            out.write('\n')
+
+if __name__ == "__main__":
+    args = get_args();
+    main(int(args.first_unid_number, 16), args.prefix, args.extension_core_file, args.unid_list_file)
+
