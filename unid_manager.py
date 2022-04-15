@@ -79,12 +79,14 @@ def main(first_unid_number, prefix, extension_core_file, unid_list_file):
             if curr_unid_names[i] in prefixed_unids:
                 curr_unids[curr_unid_names[i]] = curr_unid_nums[i]
         curr_free_unid_num = 0
+        new_unid_strs = []
         for i in range(len(prefixed_unids)):
             unid = prefixed_unids[i]
             # If unid is already in our list, use that instead
             if unid in curr_unid_names:
                 unid_num = curr_unid_nums[curr_unid_names.index(unid)]
                 print(f'Existing UNID: {unid} {unid_num}')
+                out.write('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">\n')
             else:
                 if curr_free_unid_num < len(free_unid_numbers):
                     unid_num = free_unid_numbers[curr_free_unid_num]
@@ -95,8 +97,9 @@ def main(first_unid_number, prefix, extension_core_file, unid_list_file):
                     unid_num = hex(last_current_num + (1 + (curr_free_unid_num - len(free_unid_numbers))))
                     curr_free_unid_num += 1
                 print(f'New UNID: {unid} {unid_num}')
-            out.write('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">')
-            out.write('\n')
+                new_unid_strs.append('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">\n')
+        for new_unid in new_unid_strs:
+            out.write(new_unid)
 
 if __name__ == "__main__":
     args = get_args();
