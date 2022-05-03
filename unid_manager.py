@@ -64,6 +64,9 @@ def load_unid_list(unid_list_file_path):
             unid_nums.append(unid_num)
     return unid_names, unid_nums
 
+def get_unid_decimal_value(unid):
+    return int(unid.split('"')[1], 16)
+
 def main(first_unid_number, prefix, extension_core_file, unid_list_file):
     prefixed_unids = [unid for unid in find_all_unids(f'./{extension_core_file}') if prefix in unid]
     free_unid_numbers = []
@@ -79,14 +82,14 @@ def main(first_unid_number, prefix, extension_core_file, unid_list_file):
             if curr_unid_names[i] in prefixed_unids:
                 curr_unids[curr_unid_names[i]] = curr_unid_nums[i]
         curr_free_unid_num = 0
-        new_unid_strs = []
+        unid_strs = []
         for i in range(len(prefixed_unids)):
             unid = prefixed_unids[i]
             # If unid is already in our list, use that instead
             if unid in curr_unid_names:
                 unid_num = curr_unid_nums[curr_unid_names.index(unid)]
                 print(f'Existing UNID: {unid} {unid_num}')
-                out.write('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">\n')
+                unid_strs.append('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">\n')
             else:
                 if curr_free_unid_num < len(free_unid_numbers):
                     unid_num = free_unid_numbers[curr_free_unid_num]
@@ -97,9 +100,10 @@ def main(first_unid_number, prefix, extension_core_file, unid_list_file):
                     unid_num = hex(last_current_num + (1 + (curr_free_unid_num - len(free_unid_numbers))))
                     curr_free_unid_num += 1
                 print(f'New UNID: {unid} {unid_num}')
-                new_unid_strs.append('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">\n')
-        for new_unid in new_unid_strs:
-            out.write(new_unid)
+                unid_strs.append('<!ENTITY ' + unid + ' ' + '"' + unid_num + '">\n')
+        unid_strs.sort(key=get_unid_decimal_value)
+        for unid in unid_strs:
+            out.write(unid)
 
 if __name__ == "__main__":
     args = get_args();
